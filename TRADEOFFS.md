@@ -56,3 +56,4 @@ Every real-world engineering architecture represents a series of conscious trade
 - **Option B (Configured JDBC Batch Inserts with Batch Size 500) — CHOSEN:**
   - *Behavior:* Groups inserts into JDBC batches of 500 records inside an explicit `@Transactional` boundary.
   - *Performance:* Seeding all 10,000 employees completes in under 2.5 seconds.
+

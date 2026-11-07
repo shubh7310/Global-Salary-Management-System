@@ -74,3 +74,4 @@ Build a centralized, high-performance, web-based **Employee Salary Management & 
 - **Data Integrity:** Zero precision loss in financial computations using `BigDecimal` and strict currency types.
 - **Test Quality:** Deterministic unit and integration test suite covering domain rules, aggregations, and edge cases.
 - **Maintainability:** Clean Architecture with clear separation between Domain, Application, and Web layers.
+

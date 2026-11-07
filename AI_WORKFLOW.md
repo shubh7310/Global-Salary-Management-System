@@ -53,3 +53,4 @@ At Incubyte, AI is viewed as an intentional multiplier for engineering craftsman
   > *"Design a modern, clean web dashboard interface for our HR Manager persona. Requirements: (1) High-level KPI summary cards (Total Payroll, Avg Salary, Headcount), (2) Departmental & Country breakdown charts, (3) Multi-facet filterable data grid with pagination, (4) Detailed employee salary drawer, (5) Interactive Salary Adjustment simulation widget."*
 * **Engineer's Critique & Decision:**
   - Focused on clarity of information hierarchy: executive metrics at the top, visual analytics in the middle, and actionable employee detail table with simulation controls.
+

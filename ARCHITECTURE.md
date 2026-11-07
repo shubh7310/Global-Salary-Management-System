@@ -158,3 +158,4 @@ ACME employees are compensated in their local national currencies:
 - **Context:** The role demands Angular craftsmanship with clean component hierarchy, reactive state, and accessible UI.
 - **Decision:** Deliver a clean, modular SPA with dashboard charts, interactive data grid, search/filter controls, and modal drawers.
 - **Consequences:** Responsive, instant user feedback, clear separation of presentation logic from API queries.
+
