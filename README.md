@@ -102,3 +102,4 @@ All 18 unit tests, domain invariant checks, and MockMvc REST controller tests ex
 - **Database-Level Aggregation:** KPI metrics, departmental sums, and country footprints are computed natively in SQL rather than streaming 10,000 objects into JVM heap memory.
 - **Fast Seeding Engine:** Configured JDBC batch inserts populate 10,000 realistic employees across 10 countries and 8 departments in ~2 seconds.
 - **Accessible & Responsive UX:** Clean enterprise styling without AI-purple clichés, fully responsive across mobile, tablet, and desktop.
+

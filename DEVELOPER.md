@@ -1,206 +1,214 @@
-# ACME HRMS — Master Developer & Architecture Guide
+# ACME HRMS — Developer Guide & System Flows
 
-**Author:** Shubhasheesh Shukla  
-**Role:** Candidate — Software Craftsperson (Java / Angular II)  
 **System:** ACME Global Salary Management System (10,000 Employees)  
-**Core Stack:** **Java 21 (Spring Boot 3)** &bull; **PostgreSQL** &bull; **Angular 18**  
+**Tech Stack:** Java 21 (Spring Boot 3) | PostgreSQL | Angular 18  
 
 ---
 
-## 1. Executive Summary & Product Problem Statement
+## 1. User Flow (HR Manager Workflow)
 
-ACME Corporation operates globally across **10 countries with 10,000 employees**. Previously, employee compensation was managed through regional, siloed Microsoft Excel workbooks. This caused critical problems:
-- **Zero Real-Time Visibility:** Executive leadership could not answer core questions: *"What is our total annual wage bill in USD?"*, *"How does Engineering compensation compare between Germany and the US?"*, or *"Where are compensation outliers?"*
-- **Currency & Formula Drift:** Multi-currency calculations across 10 currencies were vulnerable to manual calculation errors and broken spreadsheet formulas.
-- **Audit Deficit:** No immutable trail existed to track who changed a salary, when, or why.
-- **Budgeting in the Dark:** HR could not model the budget impact of annual raises or cost-of-living adjustments before committing them.
+Elena Rostova (HR VP) uses this system to manage and audit global compensation. Here is her exact end-to-end flow:
 
-This application centralizes global compensation into a **high-performance web system** built with **Java 21 (Spring Boot 3)**, **PostgreSQL** with B-Tree composite indexing, and a **responsive Angular 18 Single Page Application**.
-
----
-
-## 2. Complete User Flow (HR Manager Persona)
-
-The primary user is **Elena Rostova** (VP of People & Global HR Operations). Her end-to-end journey through the system:
-
-```mermaid
-flowchart TD
-    A[HR Manager Elena Launches ACME HRMS] --> B[Executive Dashboard]
-    B --> C{Review Global KPIs}
-    C -->|Total Payroll USD, Headcount, Mean, Median| D[Inspect Department Distribution]
-    C -->|Multi-Currency Footprint| E[Inspect Regional Footprint Table]
-    B --> F[Employee Directory]
-    F --> G[Search by ID / Name / Role or Filter by Country / Dept]
-    G --> H[Server-Side Paginated Table - Sub-50ms Response]
-    H --> I[Click 'Inspect & Edit' on Employee Row]
-    I --> J[Slide-Over Salary Drawer Opens]
-    J --> K[Review Detailed Components: Base, Housing, Transport, Bonus, Deductions]
-    K --> L[Submit Revision with Mandatory Reason]
-    L --> M[System Updates Local & USD Amounts + Logs Immutable Audit Entry]
-    B --> N[Launch Salary Simulator]
-    N --> O[Select Target Country / Dept + Enter % Raise]
-    O --> P[Instant 'What-If' Impact: Headcount, Budget Delta, New Avg Salary]
-    B --> Q[Audit Trail Tab]
-    Q --> R[Review Timeline of All Historical Compensation Modifications]
-    F --> S[One-Click CSV Export for Board Presentations]
-```
-
-### Key Screen Actions & Capabilities:
-1. **Executive Dashboard (`/dashboard`):**
-   - 4 Top-line KPI Cards: Total Headcount (`10,000`), Total Payroll (`$1.25B`), Mean Salary (`$125k`), Median Salary (`$118k`).
-   - Visual Department Breakdown: Horizontal allocation bars comparing staff headcount and payroll spend across 8 departments.
-   - Regional Footprint Table: Compares local currency totals (`EUR`, `GBP`, `INR`, `JPY`, etc.) with normalized USD equivalents.
-2. **Global Directory (`/employees`):**
-   - Instant full-text search across 10,000 employees.
-   - Multi-facet dropdowns: Country (10), Department (8), Salary range filters.
-   - Fast server-side pagination with column sorting (by employee code, name, or USD salary).
-   - "Download CSV Export" streaming all matching rows for executive reporting.
-3. **Employee Detail & Adjustment Drawer:**
-   - Full compensation breakdown: Base Salary, Housing Allowance, Transport Allowance, Performance Bonus, Statutory Deductions, Gross Annual, Net Annual, and Monthly Take-Home.
-   - Revisions Form: Allows adjusting components with a **mandatory business justification** field.
-   - Per-employee revision history timeline.
-4. **"What-If" Compensation Simulator (`/simulator`):**
-   - Select Country / Department / Organization-wide.
-   - Input raise percentage (e.g. `+5%`).
-   - Immediately calculates affected headcount, current wage bill, projected wage bill, and net budget delta.
-5. **Governance Audit Trail (`/audit-trail`):**
-   - Central table displaying all compensation changes across the org, previous vs new amounts, reason, and author.
-
----
-
-## 3. Full Code Flow & System Architecture
-
-The application implements **Clean Architecture** and **Domain-Driven Design (DDD)**:
+### Flow Diagram
 
 ```
-[Angular 18 Frontend (TypeScript)]
-       │
-       │ HTTP REST API (JSON)
-       ▼
-[Spring Boot 3 REST Controllers]
-  - EmployeeController       (/api/v1/employees)
-  - AnalyticsController      (/api/v1/analytics)
-  - DataExportController     (/api/v1/employees/export)
-       │
-       │ DTO Validation (@Valid) & Query Parameters
-       ▼
-[Application Services Layer]
-  - EmployeeService              (Search, Get by ID, Update Salary, Audit)
-  - CompensationAnalyticsService (KPIs, Department & Country Aggregations, Simulation)
-  - CurrencyConversionService    (Fixed fiscal budget exchange rates)
-  - DataSeedingService           (High-speed batch seeder for 10,000 records)
-       │
-       │ Pure Domain Invariants
-       ▼
-[Domain Core (Zero Framework Dependencies)]
-  - Employee                 (Aggregate Root)
-  - SalaryStructure          (Value Object: Gross, Net, Monthly calculations)
-  - Money                    (Value Object: BigDecimal, Banker's Rounding HALF_EVEN)
-  - CompensationAuditLog     (Domain entity)
-       │
-       │ Ports & Adapters (Spring Data JPA)
-       ▼
-[Infrastructure Persistence Layer]
-  - EmployeeJpaRepository        (SQL aggregate projections, B-Tree indexed search)
-  - CompensationAuditJpaRepository
-  - EmployeeEntityMapper
-       │
-       │ Relational Database Driver
-       ▼
-[PostgreSQL Database (Docker / Production) | H2 Postgres-Mode (Local Zero-Config)]
-  - Table: employees
-  - Table: compensation_audit_logs
+[ 1. HR Manager Logs In ]
+          │
+          ▼
+[ 2. Executive Dashboard ]
+   ├── Views Total Payroll ($1.28B), 10,000 Headcount, Mean ($128k), Median ($120k)
+   ├── Inspects Department Budget Bars (Engineering, Sales, Product, etc.)
+   └── Inspects Country Footprint Table (10 currencies converted to USD)
+          │
+          ▼
+[ 3. Employee Directory ]
+   ├── Searches by ID (EMP-00042), Name, or Title with sub-50ms response
+   ├── Filters by Country, Department, or Salary Range
+   └── Navigates 10,000 records using server-side pagination (Page 1 of 500)
+          │
+          ▼
+[ 4. Inspect & Edit Employee Drawer ]
+   ├── Clicks "Inspect & Edit" on any employee row
+   ├── Drawer opens showing full salary breakdown:
+   │     • Base Salary (70%)
+   │     • Housing Allowance (12%)
+   │     • Transport Allowance (4%)
+   │     • Performance Bonus (14%)
+   │     • Statutory Deductions (20%)
+   │     • Monthly Net Take-Home
+   ├── Updates component values in the revision form
+   ├── Enters mandatory reason (e.g. "Annual Promotion")
+   └── Clicks "Save" ──► Instant USD recalculation + Audit Log entry created
+          │
+          ▼
+[ 5. What-If Salary Simulator ]
+   ├── Selects Country (e.g. Germany) & Department (e.g. Engineering)
+   ├── Enters proposed raise (e.g. +5%)
+   └── Instantly sees:
+         • Number of affected staff
+         • Current Wage Bill vs Projected Wage Bill
+         • Exact Budget Delta ($USD)
+         • New Mean Salary
+          │
+          ▼
+[ 6. Compliance Audit Trail ]
+   └── Reviews timestamped log of all changes across the company with reasons & authors
+```
+
+### Step-by-Step Walkthrough
+
+| Step | Page / Screen | What the HR Manager Does | What the System Does Behind the Scenes |
+| :--- | :--- | :--- | :--- |
+| **1. Executive Review** | `/dashboard` | Reviews company-wide payroll health, mean salary, and median benchmarks. | Runs SQL native aggregate functions (`SUM`, `AVG`, `MIN`, `MAX`) across 10,000 rows in <15ms. |
+| **2. Regional Breakdown** | `/dashboard` | Checks local currencies (EUR, GBP, INR, JPY) alongside normalized USD figures. | Aggregates local payroll per country and converts using annual budget exchange rates. |
+| **3. Search & Filter** | `/employees` | Searches for specific staff or filters by department/country. | Executes B-Tree indexed SQL query with pagination (`LIMIT 20 OFFSET 0`). |
+| **4. Salary Revision** | `/employees` (Drawer) | Inspects employee compensation, adjusts components, and provides a business reason. | Validates non-negative amounts, checks deduction bounds, and saves an immutable audit record. |
+| **5. Model Future Raises** | `/simulator` | Tests "What-If" scenarios (e.g. +6% raise for Sales). | Dynamically calculates budget delta and projected averages without modifying production records. |
+| **6. Audit & Export** | `/audit-trail` & CSV | Audits historical revisions and downloads filtered CSV reports. | Streams CSV directly from database with proper escaping. |
+
+---
+
+## 2. Code Flow (Request Lifecycle)
+
+When the browser requests data or modifies a salary, the call travels through 4 distinct layers:
+
+```
++───────────────────────────────────────────────────────────────────+
+| 1. PRESENTATION LAYER (Angular 18 Frontend)                       |
+|    • Standalone Components: Dashboard, EmployeeList, Drawer, Sim  |
+|    • Services: EmployeeService, AnalyticsService (HttpClient)     |
++─────────────────────────────────┬─────────────────────────────────+
+                                  │ HTTP GET / POST / PUT (JSON)
+                                  ▼
++───────────────────────────────────────────────────────────────────+
+| 2. WEB API CONTROLLERS (Spring Boot 3)                            |
+|    • EmployeeController       (/api/v1/employees)                 |
+|    • AnalyticsController      (/api/v1/analytics)                 |
+|    • DataExportController     (/api/v1/employees/export)          |
+|    • Input Validation: @Valid, Bean Validation (@NotNull, @Min)   |
++─────────────────────────────────┬─────────────────────────────────+
+                                  │ DTOs
+                                  ▼
++───────────────────────────────────────────────────────────────────+
+| 3. APPLICATION SERVICES & DOMAIN LOGIC                            |
+|    • EmployeeService: Orchestrates search, updates, & audit logs  |
+|    • CompensationAnalyticsService: KPI aggregates & simulations   |
+|    • CurrencyConversionService: Normalizes 10 currencies to USD   |
+|    • Pure Domain Core: Employee, SalaryStructure, Money (no ORM)  |
++─────────────────────────────────┬─────────────────────────────────+
+                                  │ JPA Entities / Projections
+                                  ▼
++───────────────────────────────────────────────────────────────────+
+| 4. PERSISTENCE & DATABASE (PostgreSQL / H2)                       |
+|    • EmployeeJpaRepository (Native SQL projections)               |
+|    • CompensationAuditJpaRepository                               |
+|    • B-Tree Composite Indexes on (country, department) & (usd)    |
+|    • JDBC Batch Inserts (batch size: 500)                         |
++───────────────────────────────────────────────────────────────────+
+```
+
+### Detailed Layer Responsibilities
+
+1. **Angular Frontend (`/frontend`):**
+   - Pure standalone TypeScript components with reactive state.
+   - Automatically detects dev mode (`port 4200`) vs unified backend mode (`port 8080`).
+   - Clean enterprise design using Slate, Corporate Blue, and Emerald Green (no AI-purple styling).
+
+2. **Spring Boot Controllers (`/presentation`):**
+   - Validates incoming payloads (`@Valid`).
+   - Delegates business operations to application services.
+   - Handled by `GlobalExceptionHandler` returning structured RFC-7807 error responses.
+
+3. **Application & Domain Services (`/application` + `/domain`):**
+   - **`SalaryStructure`**: Pure Java domain value object. Encapsulates gross, net, and monthly take-home logic. Enforces business rules (deductions cannot exceed gross salary).
+   - **`Money`**: Value object using `BigDecimal` and Banker's Rounding (`RoundingMode.HALF_EVEN`) to eliminate financial floating-point rounding errors.
+   - **`CurrencyConversionService`**: Converts between 10 local currencies and corporate USD reporting currency.
+   - **`DataSeedingService`**: Generates 10,000 realistic employees in batches of 500 records on first startup (~2 seconds).
+
+4. **Persistence Layer (`/infrastructure`):**
+   - **`EmployeeJpaRepository`**: Employs SQL aggregate projections (`COUNT`, `SUM`, `AVG`, `MIN`, `MAX`) directly in the database. Computes global metrics over 10,000 rows in <15ms.
+   - **B-Tree Indexes**:
+     - `idx_emp_country_dept` on `(country, department)`
+     - `idx_emp_gross_usd` on `(annual_gross_usd)`
+     - `idx_emp_code` on `(employee_code)`
+     - `idx_emp_name` on `(last_name, first_name)`
+
+---
+
+## 3. Database Schema Overview
+
+```
+TABLE: employees
+-----------------------------------------------------------------------------
+id                  UUID (Primary Key)
+employee_code       VARCHAR(32) UNIQUE, INDEXED
+first_name          VARCHAR(64)
+last_name           VARCHAR(64), INDEXED with first_name
+email               VARCHAR(128)
+department          VARCHAR(32), INDEXED
+job_title           VARCHAR(100)
+country             VARCHAR(32), INDEXED
+hire_date           DATE
+currency            VARCHAR(8) (USD, EUR, GBP, INR, JPY, CAD, AUD, SGD, CHF, BRL)
+base_salary         NUMERIC(15, 2)
+housing_allowance   NUMERIC(15, 2)
+transport_allowance NUMERIC(15, 2)
+performance_bonus   NUMERIC(15, 2)
+statutory_deduction NUMERIC(15, 2)
+annual_gross_local  NUMERIC(15, 2)
+annual_net_local    NUMERIC(15, 2)
+annual_gross_usd    NUMERIC(15, 2), INDEXED
+annual_net_usd      NUMERIC(15, 2)
+
+TABLE: compensation_audit_logs
+-----------------------------------------------------------------------------
+id                  UUID (Primary Key)
+employee_id         UUID, INDEXED
+employee_code       VARCHAR(32)
+employee_name       VARCHAR(128)
+currency            VARCHAR(8)
+prev_gross_local    NUMERIC(15, 2)
+new_gross_local     NUMERIC(15, 2)
+prev_gross_usd      NUMERIC(15, 2)
+new_gross_usd       NUMERIC(15, 2)
+reason              VARCHAR(512)
+modified_by         VARCHAR(64)
+modified_at         TIMESTAMP, INDEXED
 ```
 
 ---
 
-## 4. Why the System Handles 10,000 Employees in Sub-50ms
+## 4. How to Run the Application
 
-1. **Database-Level SQL Aggregations:**
-   - Instead of streaming 10,000 Java objects into JVM heap memory and looping, queries run native SQL aggregates:
-     ```sql
-     SELECT COUNT(e), SUM(e.annual_gross_usd), AVG(e.annual_gross_usd), MIN(e.annual_gross_usd), MAX(e.annual_gross_usd)
-     FROM employees e;
-     ```
-   - This executes on pre-built B-Tree database pages in ~12ms and returns a single lightweight JSON payload.
-2. **Synchronized USD Column & Composite Indexing:**
-   - Every employee row stores **both** local currency components and a synchronized `annual_gross_usd` column.
-   - Indexed via:
-     - `idx_emp_country_dept ON employees(country, department)`
-     - `idx_emp_gross_usd ON employees(annual_gross_usd)`
-     - `idx_emp_code ON employees(employee_code)`
-     - `idx_emp_name ON employees(last_name, first_name)`
-   - This prevents full table scans when filtering by country, department, or salary bracket.
-3. **High-Speed JDBC Batch Seeding:**
-   - The seeder uses JDBC batches of 500 records inside an explicit `@Transactional` boundary with periodic `flush()` and `clear()`.
-   - Seeding all 10,000 employees completes in under 2.5 seconds.
-
----
-
-## 5. UI/UX Design System (No AI-Purple Clichés, Fully Mobile-Responsive)
-
-- **Color Palette:**
-  - Base: Crisp Slate / Zinc (`slate-50`, `slate-100`, `slate-900`)
-  - Primary Corporate Action: Deep Sky Blue (`#0284c7`, `#0369a1`)
-  - Money / Growth Accents: Emerald Green (`#059669`, `#10b981`)
-  - Warning / Delta Accents: Rose Red (`#e11d48`)
-  - Strictly avoids cliché purple/violet AI themes in favor of an executive enterprise HR tool aesthetic.
-- **Mobile Responsiveness:**
-  - Responsive hamburger drawer navigation on small viewports (`< 768px`).
-  - Fluid grid system (`grid-cols-1 sm:grid-cols-2 lg:grid-cols-4`).
-  - Tables wrapped in smooth horizontal scroll containers (`overflow-x-auto min-w-[700px]`) so columns never get squished.
-  - Detail drawer slides gracefully from the right on desktop and fills mobile screens cleanly.
-
----
-
-## 6. How to Run & Verify
-
-### Option A: 1-Step Unified Execution (Zero Prerequisites)
-The Spring Boot backend comes bundled with the production-built Angular SPA:
+### Option A: One-Command Startup (Unified Port 8080)
+The Spring Boot backend serves both the REST APIs and the pre-built Angular frontend:
 ```bash
 cd backend
 mvnw.cmd spring-boot:run
 ```
-- Open your browser at **`http://localhost:8080`**.
-- The full Angular application loads automatically, seamlessly connected to the backend REST API.
-- The 10,000 employee seed script auto-populates on first run.
+- Open browser at **`http://localhost:8080`**.
+- 10,000 employees are seeded automatically on first startup.
 
-### Option B: Running with Real PostgreSQL (Docker)
-1. Start PostgreSQL with Docker Compose:
-   ```bash
-   docker compose up -d
-   ```
-2. Start Spring Boot with the `postgres` profile:
-   ```bash
-   cd backend
-   mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=postgres
-   ```
+### Option B: Real PostgreSQL with Docker
+```bash
+# 1. Start PostgreSQL
+docker compose up -d
 
-### Option C: Running Angular in Development Mode
-If you wish to run the Angular development server separately:
+# 2. Start Backend with postgres profile
+cd backend
+mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=postgres
+```
+
+### Option C: Angular Development Mode (Port 4200)
 ```bash
 cd frontend
 npm start
 ```
-- Opens at **`http://localhost:4200`** with live reload.
+- Opens at **`http://localhost:4200`** with live hot-reloading.
 
-### Running Backend Unit & Controller Tests
+### Running Automated Tests
 ```bash
 cd backend
 mvnw.cmd test
 ```
-- Runs all 18 unit tests, domain invariant checks, and MockMvc REST controller tests in ~7 seconds.
-
----
-
-## 7. Key Interview Talking Points (Why This Submission Stands Out)
-
-1. **Software Craftsmanship & Domain Isolation:**
-   - The domain (`Employee`, `SalaryStructure`, `Money`) contains pure business logic with zero framework annotations.
-   - Financial math uses `BigDecimal` with Banker's Rounding (`RoundingMode.HALF_EVEN`). No floating-point precision leaks.
-2. **Product-Led Engineering:**
-   - Solved the exact operational pains of the HR Manager: real-time executive dashboard, multi-currency footprint, instant search, salary component editing with mandatory audit reasoning, and "What-If" raise simulations.
-3. **High-Performance Architecture for 10,000 Records:**
-   - Fast B-Tree indexing, database-level SQL aggregate queries, and JDBC batching. Sub-50ms query response.
-4. **Deliberate Non-Goals & Architectural Judgment:**
-   - Clearly documented why payment rails (ACH/SEPA) and heavy BPMN workflow engines were excluded for MVP to keep cognitive load low and maintainability high.
+All 18 unit, domain, and MockMvc controller tests pass in ~7 seconds.

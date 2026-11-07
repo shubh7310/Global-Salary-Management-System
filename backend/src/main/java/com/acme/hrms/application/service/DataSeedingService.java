@@ -82,6 +82,7 @@ public class DataSeedingService implements CommandLineRunner {
     }
 
     @Override
+    @Transactional
     public void run(String... args) {
         if (!seedingEnabled) {
             log.info("Data seeding is disabled in configuration.");
