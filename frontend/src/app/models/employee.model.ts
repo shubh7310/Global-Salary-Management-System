@@ -43,6 +43,31 @@ export interface EmployeeDetail {
   salaryStructure: SalaryStructure;
 }
 
+export interface CreateEmployeeRequest {
+  firstName: string;
+  lastName: string;
+  email: string;
+  department: string;
+  jobTitle: string;
+  country: string;
+  hireDate?: string;
+  currency: string;
+  baseSalary: number;
+  housingAllowance: number;
+  transportAllowance: number;
+  performanceBonus: number;
+  statutoryDeduction: number;
+}
+
+export interface UpdateEmployeeProfileRequest {
+  firstName: string;
+  lastName: string;
+  email: string;
+  department: string;
+  jobTitle: string;
+  country: string;
+}
+
 export interface SalaryUpdateRequest {
   currency: string;
   baseSalary: number;
@@ -78,4 +103,3 @@ export interface AuditLog {
   modifiedBy: string;
   modifiedAt: string;
 }
-

@@ -132,7 +132,7 @@ import { AnalyticsOverview, CountryAnalytics, DepartmentAnalytics } from '../../
                 <tr>
                   <th class="py-2.5 px-4 sm:px-6">Country</th>
                   <th class="py-2.5 px-3">Headcount</th>
-                  <th class="py-2.5 px-3">Local Currency Total</th>
+                  <th class="py-2.5 px-3">Local Payroll Total</th>
                   <th class="py-2.5 px-4 sm:px-6 text-right">Normalized (USD)</th>
                 </tr>
               </thead>
@@ -143,8 +143,8 @@ import { AnalyticsOverview, CountryAnalytics, DepartmentAnalytics } from '../../
                     <span class="text-[10px] text-slate-400 font-normal ml-1">({{ c.currency }})</span>
                   </td>
                   <td class="py-3 px-3 text-slate-600 font-mono">{{ c.headcount }}</td>
-                  <td class="py-3 px-3 text-slate-600 font-mono">
-                    {{ c.currency }} {{ c.totalPayrollLocal | number:'1.0-0' }}
+                  <td class="py-3 px-3 text-slate-700 font-mono font-medium">
+                    {{ getCurrencySymbol(c.currency) }}{{ c.totalPayrollLocal | number:'1.0-0' }}
                   </td>
                   <td class="py-3 px-4 sm:px-6 text-right font-mono font-bold text-slate-900">
                     \${{ c.totalPayrollUSD | number:'1.0-0' }}
@@ -192,5 +192,21 @@ export class DashboardComponent implements OnInit {
       next: (data) => this.countries = data,
       error: (err) => console.error('Failed to load countries', err)
     });
+  }
+
+  getCurrencySymbol(curr?: string): string {
+    if (!curr) return '$';
+    switch (curr) {
+      case 'INR': return '₹';
+      case 'GBP': return '£';
+      case 'EUR': return '€';
+      case 'JPY': return '¥';
+      case 'CAD': return 'CA$';
+      case 'AUD': return 'A$';
+      case 'SGD': return 'S$';
+      case 'CHF': return 'CHF ';
+      case 'BRL': return 'R$';
+      default: return '$';
+    }
   }
 }

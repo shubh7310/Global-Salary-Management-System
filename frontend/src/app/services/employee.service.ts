@@ -1,7 +1,15 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { AuditLog, EmployeeDetail, EmployeeSummary, PagedResponse, SalaryUpdateRequest } from '../models/employee.model';
+import {
+  AuditLog,
+  CreateEmployeeRequest,
+  EmployeeDetail,
+  EmployeeSummary,
+  PagedResponse,
+  SalaryUpdateRequest,
+  UpdateEmployeeProfileRequest
+} from '../models/employee.model';
 
 @Injectable({
   providedIn: 'root'
@@ -42,6 +50,18 @@ export class EmployeeService {
     return this.http.get<EmployeeDetail>(`${this.baseUrl}/${id}`);
   }
 
+  createEmployee(payload: CreateEmployeeRequest): Observable<EmployeeDetail> {
+    return this.http.post<EmployeeDetail>(this.baseUrl, payload);
+  }
+
+  updateEmployeeProfile(id: string, payload: UpdateEmployeeProfileRequest): Observable<EmployeeDetail> {
+    return this.http.put<EmployeeDetail>(`${this.baseUrl}/${id}`, payload);
+  }
+
+  deleteEmployee(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${id}`);
+  }
+
   updateSalary(id: string, payload: SalaryUpdateRequest): Observable<EmployeeDetail> {
     return this.http.put<EmployeeDetail>(`${this.baseUrl}/${id}/salary`, payload);
   }
@@ -70,4 +90,3 @@ export class EmployeeService {
     return `${this.baseUrl}/export/csv?${query.toString()}`;
   }
 }
-

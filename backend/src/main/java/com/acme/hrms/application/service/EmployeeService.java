@@ -148,6 +148,95 @@ public class EmployeeService {
         return mapToDetailResponse(saved);
     }
 
+    public EmployeeResponse createEmployee(CreateEmployeeRequest request) {
+        long nextNum = employeeRepository.count() + 1;
+        String code = String.format("EMP-%05d", nextNum);
+        while (employeeRepository.existsByEmployeeCode(code)) {
+            nextNum++;
+            code = String.format("EMP-%05d", nextNum);
+        }
+
+        SalaryStructure salary = new SalaryStructure(
+                request.currency(),
+                request.baseSalary(),
+                request.housingAllowance(),
+                request.transportAllowance(),
+                request.performanceBonus(),
+                request.statutoryDeduction()
+        );
+
+        BigDecimal grossLocal = salary.calculateGrossAnnual();
+        BigDecimal netLocal = salary.calculateNetAnnual();
+        BigDecimal grossUSD = currencyService.convertToUSD(grossLocal, request.currency());
+        BigDecimal netUSD = currencyService.convertToUSD(netLocal, request.currency());
+
+        EmployeeJpaEntity entity = new EmployeeJpaEntity(
+                UUID.randomUUID(),
+                code,
+                request.firstName().trim(),
+                request.lastName().trim(),
+                request.email().trim().toLowerCase(),
+                request.department(),
+                request.jobTitle().trim(),
+                request.country(),
+                request.hireDate() != null ? request.hireDate() : java.time.LocalDate.now(),
+                request.currency(),
+                request.baseSalary(),
+                request.housingAllowance(),
+                request.transportAllowance(),
+                request.performanceBonus(),
+                request.statutoryDeduction(),
+                grossLocal,
+                netLocal,
+                grossUSD,
+                netUSD
+        );
+
+        EmployeeJpaEntity saved = employeeRepository.save(entity);
+
+        CompensationAuditJpaEntity audit = new CompensationAuditJpaEntity(
+                UUID.randomUUID(),
+                saved.getId(),
+                saved.getEmployeeCode(),
+                saved.getFirstName() + " " + saved.getLastName(),
+                request.currency(),
+                BigDecimal.ZERO,
+                grossLocal,
+                BigDecimal.ZERO,
+                grossUSD,
+                "New Employee Onboarding",
+                "Elena Rostova (HR VP)",
+                Instant.now()
+        );
+        auditRepository.save(audit);
+
+        return mapToDetailResponse(saved);
+    }
+
+    public EmployeeResponse updateEmployeeProfile(UUID id, UpdateEmployeeProfileRequest request) {
+        EmployeeJpaEntity entity = employeeRepository.findById(id)
+                .orElseThrow(() -> new EmployeeNotFoundException(id));
+
+        entity.setFirstName(request.firstName().trim());
+        entity.setLastName(request.lastName().trim());
+        entity.setEmail(request.email().trim().toLowerCase());
+        entity.setDepartment(request.department());
+        entity.setJobTitle(request.jobTitle().trim());
+        entity.setCountry(request.country());
+
+        EmployeeJpaEntity saved = employeeRepository.save(entity);
+        return mapToDetailResponse(saved);
+    }
+
+    public void deleteEmployee(UUID id) {
+        EmployeeJpaEntity entity = employeeRepository.findById(id)
+                .orElseThrow(() -> new EmployeeNotFoundException(id));
+
+        List<CompensationAuditJpaEntity> audits = auditRepository.findByEmployeeIdOrderByModifiedAtDesc(id);
+        auditRepository.deleteAll(audits);
+        employeeRepository.delete(entity);
+    }
+
     @Transactional(readOnly = true)
     public List<AuditLogResponse> getAuditLogsForEmployee(UUID employeeId) {
         return auditRepository.findByEmployeeIdOrderByModifiedAtDesc(employeeId).stream()

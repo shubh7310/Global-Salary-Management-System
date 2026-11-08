@@ -4,6 +4,15 @@
 .gradle/
 bin/
 
+# Local personal notes & assessment files (kept local only)
+.local_notes/
+DEMO_WALKTHROUGH.md
+Salary Management Assessment- Candidates.docx
+*.docx
+*.doc
+*.pdf
+guide/
+
 # Java / Maven build outputs
 target/
 *.class
@@ -42,4 +51,3 @@ yarn-error.log*
 *.sqlite
 *.mv.db
 *.trace.db
-

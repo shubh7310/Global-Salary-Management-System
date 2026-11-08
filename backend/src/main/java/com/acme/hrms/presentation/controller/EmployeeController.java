@@ -46,6 +46,25 @@ public class EmployeeController {
         return ResponseEntity.ok(employeeService.getEmployeeById(id));
     }
 
+    @PostMapping
+    public ResponseEntity<EmployeeResponse> createEmployee(@Valid @RequestBody CreateEmployeeRequest request) {
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED)
+                .body(employeeService.createEmployee(request));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<EmployeeResponse> updateEmployeeProfile(
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateEmployeeProfileRequest request) {
+        return ResponseEntity.ok(employeeService.updateEmployeeProfile(id, request));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteEmployee(@PathVariable UUID id) {
+        employeeService.deleteEmployee(id);
+        return ResponseEntity.noContent().build();
+    }
+
     @PutMapping("/{id}/salary")
     public ResponseEntity<EmployeeResponse> updateSalary(
             @PathVariable UUID id,

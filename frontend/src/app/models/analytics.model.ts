@@ -42,10 +42,13 @@ export interface AdjustmentSimulationResponse {
   filterDepartment?: string | null;
   percentageChange: number;
   affectedEmployees: number;
+  currency?: string | null;
+  currentTotalPayrollLocal?: number | null;
+  projectedTotalPayrollLocal?: number | null;
+  payrollDeltaLocal?: number | null;
   currentTotalPayrollUSD: number;
   projectedTotalPayrollUSD: number;
   payrollDeltaUSD: number;
   currentAvgSalaryUSD: number;
   projectedAvgSalaryUSD: number;
 }
-

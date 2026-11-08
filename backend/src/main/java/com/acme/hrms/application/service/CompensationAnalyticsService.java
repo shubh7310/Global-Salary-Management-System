@@ -2,6 +2,7 @@ package com.acme.hrms.application.service;
 
 import com.acme.hrms.application.dto.*;
 import com.acme.hrms.domain.model.Country;
+import com.acme.hrms.domain.model.Currency;
 import com.acme.hrms.domain.model.Department;
 import com.acme.hrms.infrastructure.persistence.projection.CountryAggregationProjection;
 import com.acme.hrms.infrastructure.persistence.projection.DepartmentAggregationProjection;
@@ -102,11 +103,23 @@ public class CompensationAnalyticsService {
         BigDecimal delta = projectedTotal.subtract(currentTotal);
         BigDecimal projectedAvg = count > 0 ? projectedTotal.divide(BigDecimal.valueOf(count), 2, RoundingMode.HALF_EVEN) : BigDecimal.ZERO;
 
+        Currency currency = request.country() != null ? request.country().getDefaultCurrency() : com.acme.hrms.domain.model.Currency.USD;
+        BigDecimal currentLocal = current != null && current.getTotalPayrollLocal() != null ? current.getTotalPayrollLocal() : currentTotal;
+        if (request.country() == null) {
+            currentLocal = currentTotal;
+        }
+        BigDecimal projectedLocal = currentLocal.multiply(multiplier).setScale(currency.getDecimalPlaces(), RoundingMode.HALF_EVEN);
+        BigDecimal deltaLocal = projectedLocal.subtract(currentLocal);
+
         return new AdjustmentSimulationResponse(
                 request.country(),
                 request.department(),
                 request.percentageChange(),
                 count,
+                currency,
+                currentLocal,
+                projectedLocal,
+                deltaLocal,
                 currentTotal,
                 projectedTotal,
                 delta,

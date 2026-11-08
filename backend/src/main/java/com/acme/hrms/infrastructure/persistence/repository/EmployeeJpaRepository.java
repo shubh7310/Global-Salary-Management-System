@@ -29,6 +29,7 @@ public interface EmployeeJpaRepository extends JpaRepository<EmployeeJpaEntity, 
      * Database-level aggregate overview across all 10,000 employees.
      */
     @Query("SELECT COUNT(e) as headcount, " +
+           "COALESCE(SUM(e.annualGrossLocal), 0) as totalPayrollLocal, " +
            "COALESCE(SUM(e.annualGrossUSD), 0) as totalPayrollUSD, " +
            "COALESCE(AVG(e.annualGrossUSD), 0) as avgSalaryUSD, " +
            "COALESCE(MIN(e.annualGrossUSD), 0) as minSalaryUSD, " +
@@ -40,6 +41,7 @@ public interface EmployeeJpaRepository extends JpaRepository<EmployeeJpaEntity, 
      * Database-level aggregate overview with optional country and department filters.
      */
     @Query("SELECT COUNT(e) as headcount, " +
+           "COALESCE(SUM(e.annualGrossLocal), 0) as totalPayrollLocal, " +
            "COALESCE(SUM(e.annualGrossUSD), 0) as totalPayrollUSD, " +
            "COALESCE(AVG(e.annualGrossUSD), 0) as avgSalaryUSD, " +
            "COALESCE(MIN(e.annualGrossUSD), 0) as minSalaryUSD, " +
